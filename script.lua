@@ -190,10 +190,35 @@ HSE:CreateButton({
 })
 
 ------------------------------------------------
--- AUTO COIN FARM
+-- AUTO COIN FARM (WORKING)
 ------------------------------------------------
 
-local farming=false
+local farming = false
+
+local function getCoins()
+
+	local coins = {}
+
+	for _,v in pairs(workspace:GetDescendants()) do
+
+		if v:IsA("BasePart") then
+
+			if v.Name:lower():find("coin") 
+			or v.Name:lower():find("gold") 
+			or v.Name:lower():find("token") then
+
+				table.insert(coins,v)
+
+			end
+
+		end
+
+	end
+
+	return coins
+
+end
+
 
 HSE:CreateToggle({
 	Name="Auto Coin Farm",
@@ -204,11 +229,13 @@ HSE:CreateToggle({
 
 		while farming do
 
-			for _,v in pairs(workspace:GetDescendants()) do
+			local coins = getCoins()
 
-				if v:IsA("Part") and v.Name:lower():find("coin") then
+			for _,coin in pairs(coins) do
 
-					root.CFrame=v.CFrame
+				if coin and coin.Parent then
+
+					root.CFrame = coin.CFrame + Vector3.new(0,3,0)
 					task.wait(0.15)
 
 				end
@@ -221,74 +248,37 @@ HSE:CreateToggle({
 
 	end
 })
-
 ------------------------------------------------
--- FLING
+-- SMOOTH FLING (Infinite Yield style)
 ------------------------------------------------
 
 local function fling(target)
 
 	if not target or not target.Character then return end
 
-	local hrp=target.Character:FindFirstChild("HumanoidRootPart")
-	if not hrp then return end
+	local thrp = target.Character:FindFirstChild("HumanoidRootPart")
+	if not thrp then return end
 
-	root.CFrame=hrp.CFrame * CFrame.new(0,0,1)
+	local old = root.CFrame
 
-	local bav=Instance.new("BodyAngularVelocity")
-	bav.AngularVelocity=Vector3.new(0,999999,0)
-	bav.MaxTorque=Vector3.new(9e9,9e9,9e9)
-	bav.Parent=root
+	root.CFrame = thrp.CFrame * CFrame.new(0,0,2)
 
-	task.wait(0.35)
+	local bav = Instance.new("BodyAngularVelocity")
+	bav.AngularVelocity = Vector3.new(0,999999,0)
+	bav.MaxTorque = Vector3.new(9e9,9e9,9e9)
+	bav.P = 100000
+	bav.Parent = root
+
+	local bv = Instance.new("BodyVelocity")
+	bv.Velocity = Vector3.new(0,0,0)
+	bv.MaxForce = Vector3.new(9e9,9e9,9e9)
+	bv.Parent = root
+
+	task.wait(0.4)
+
 	bav:Destroy()
+	bv:Destroy()
+
+	root.CFrame = old
 
 end
-
-HSE:CreateButton({
-	Name="Fling IT",
-	Callback=function()
-		fling(getSeeker())
-	end
-})
-
-HSE:CreateButton({
-	Name="Fling Players",
-	Callback=function()
-
-		local it=getSeeker()
-
-		for _,p in pairs(Players:GetPlayers()) do
-			if p~=player and p~=it then
-				fling(p)
-			end
-		end
-
-	end
-})
-
-HSE:CreateButton({
-	Name="Fling All",
-	Callback=function()
-
-		for _,p in pairs(Players:GetPlayers()) do
-			if p~=player then
-				fling(p)
-			end
-		end
-
-	end
-})
-
-HSE:CreateInput({
-	Name="Fling Sniper",
-	PlaceholderText="Enter Username",
-	Callback=function(name)
-
-		local t=Players:FindFirstChild(name)
-		if t then
-			fling(t)
-		end
-
-	end
-})
