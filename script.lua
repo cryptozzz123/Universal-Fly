@@ -1,4 +1,3 @@
--- Rayfield UI
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Players = game:GetService("Players")
@@ -31,10 +30,10 @@ end)
 ------------------------------------------------
 
 local Window = Rayfield:CreateWindow({
-	Name = "Universal Fly Hub",
-	LoadingTitle = "Universal Hub",
-	LoadingSubtitle = "Loading...",
-	ConfigurationSaving = {Enabled = false}
+	Name="Universal Fly Hub",
+	LoadingTitle="Universal Hub",
+	LoadingSubtitle="Loading",
+	ConfigurationSaving={Enabled=false}
 })
 
 local Main = Window:CreateTab("Main",4483362458)
@@ -48,8 +47,8 @@ Main:CreateInput({
 	Name="WalkSpeed",
 	PlaceholderText="Enter Speed",
 	Callback=function(v)
-		local n = tonumber(v)
-		if n then hum.WalkSpeed = n end
+		local n=tonumber(v)
+		if n then hum.WalkSpeed=n end
 	end
 })
 
@@ -61,26 +60,26 @@ Main:CreateInput({
 	Name="JumpPower",
 	PlaceholderText="Enter JumpPower",
 	Callback=function(v)
-		local n = tonumber(v)
-		if n then hum.JumpPower = n end
+		local n=tonumber(v)
+		if n then hum.JumpPower=n end
 	end
 })
 
 ------------------------------------------------
--- FLY (Infinite Yield style)
+-- FLY
 ------------------------------------------------
 
-local flying = false
-local speed = 60
-local bv, bg
-local ctrl = {f=0,b=0,l=0,r=0,u=0,d=0}
+local flying=false
+local speed=60
+local bv,bg
+local ctrl={f=0,b=0,l=0,r=0,u=0,d=0}
 
 Main:CreateInput({
 	Name="Fly Speed",
 	PlaceholderText="Enter Fly Speed",
 	Callback=function(v)
-		local n = tonumber(v)
-		if n then speed = n end
+		local n=tonumber(v)
+		if n then speed=n end
 	end
 })
 
@@ -89,14 +88,14 @@ Main:CreateToggle({
 	CurrentValue=false,
 	Callback=function(v)
 
-		flying = v
+		flying=v
 
 		if flying then
-			bv = Instance.new("BodyVelocity", root)
-			bv.MaxForce = Vector3.new(1e9,1e9,1e9)
+			bv=Instance.new("BodyVelocity",root)
+			bv.MaxForce=Vector3.new(1e9,1e9,1e9)
 
-			bg = Instance.new("BodyGyro", root)
-			bg.MaxTorque = Vector3.new(1e9,1e9,1e9)
+			bg=Instance.new("BodyGyro",root)
+			bg.MaxTorque=Vector3.new(1e9,1e9,1e9)
 		else
 			if bv then bv:Destroy() end
 			if bg then bg:Destroy() end
@@ -132,144 +131,117 @@ RunService.RenderStepped:Connect(function()
 		(cam.CFrame.RightVector*(ctrl.r+ctrl.l)) +
 		(cam.CFrame.UpVector*(ctrl.u+ctrl.d))
 
-		bv.Velocity = dir * speed
-		bg.CFrame = cam.CFrame
+		bv.Velocity=dir*speed
+		bg.CFrame=cam.CFrame
 	end
 
 end)
 
 ------------------------------------------------
--- FIND SEEKER
+-- SEEKER FINDER
 ------------------------------------------------
 
 local function getSeeker()
-
 	for _,p in pairs(Players:GetPlayers()) do
-		if p.Character and p.Character:FindFirstChild("Seeker") then
+		if p.Team and p.Team.Name:lower():find("seeker") then
 			return p
 		end
 	end
-
 end
 
 ------------------------------------------------
--- ESP SYSTEM
+-- SEEKER TRACKER
 ------------------------------------------------
 
-local function clearESP()
+local seekerESP
 
-	for _,p in pairs(Players:GetPlayers()) do
-		if p.Character then
-			for _,v in pairs(p.Character:GetChildren()) do
-				if v:IsA("Highlight") then
-					v:Destroy()
+HSE:CreateToggle({
+	Name="Seeker Tracker",
+	CurrentValue=false,
+	Callback=function(v)
+
+		if seekerESP then
+			seekerESP:Destroy()
+			seekerESP=nil
+		end
+
+		if v then
+			local s=getSeeker()
+
+			if s and s.Character then
+				seekerESP=Instance.new("Highlight")
+				seekerESP.FillColor=Color3.fromRGB(255,0,0)
+				seekerESP.Parent=s.Character
+			end
+		end
+
+	end
+})
+
+------------------------------------------------
+-- SAFE SPOT
+------------------------------------------------
+
+HSE:CreateButton({
+	Name="Teleport Safe Spot",
+	Callback=function()
+		root.CFrame=CFrame.new(0,350,0)
+	end
+})
+
+------------------------------------------------
+-- AUTO COIN FARM
+------------------------------------------------
+
+local farming=false
+
+HSE:CreateToggle({
+	Name="Auto Coin Farm",
+	CurrentValue=false,
+	Callback=function(v)
+
+		farming=v
+
+		while farming do
+
+			for _,v in pairs(workspace:GetDescendants()) do
+
+				if v:IsA("Part") and v.Name:lower():find("coin") then
+
+					root.CFrame=v.CFrame
+					task.wait(0.15)
+
 				end
-			end
-		end
-	end
-
-end
-
-HSE:CreateButton({
-	Name="ESP Players",
-	Callback=function()
-
-		clearESP()
-		local seeker = getSeeker()
-
-		for _,p in pairs(Players:GetPlayers()) do
-			if p ~= player and p ~= seeker and p.Character then
-
-				local h = Instance.new("Highlight",p.Character)
-				h.FillColor = Color3.fromRGB(0,255,0)
 
 			end
-		end
 
-	end
-})
+			task.wait(1)
 
-HSE:CreateButton({
-	Name="ESP IT",
-	Callback=function()
-
-		clearESP()
-		local seeker = getSeeker()
-
-		if seeker and seeker.Character then
-
-			local h = Instance.new("Highlight",seeker.Character)
-			h.FillColor = Color3.fromRGB(255,0,0)
-
-		end
-
-	end
-})
-
-HSE:CreateButton({
-	Name="ESP ALL",
-	Callback=function()
-
-		clearESP()
-
-		for _,p in pairs(Players:GetPlayers()) do
-			if p ~= player and p.Character then
-
-				local h = Instance.new("Highlight",p.Character)
-				h.FillColor = Color3.fromRGB(0,255,0)
-
-			end
 		end
 
 	end
 })
 
 ------------------------------------------------
--- COLLECT COINS
-------------------------------------------------
-
-HSE:CreateButton({
-	Name="Collect ALL Coins",
-	Callback=function()
-
-		local old = root.CFrame
-
-		for _,v in pairs(workspace:GetDescendants()) do
-
-			if v:IsA("Part") and string.find(v.Name:lower(),"coin") then
-
-				root.CFrame = v.CFrame
-				task.wait(0.15)
-
-			end
-
-		end
-
-		root.CFrame = old
-
-	end
-})
-
-------------------------------------------------
--- FLING SYSTEM
+-- FLING
 ------------------------------------------------
 
 local function fling(target)
 
 	if not target or not target.Character then return end
 
-	local hrp = target.Character:FindFirstChild("HumanoidRootPart")
+	local hrp=target.Character:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 
-	root.CFrame = hrp.CFrame
+	root.CFrame=hrp.CFrame * CFrame.new(0,0,1)
 
-	local vel = Instance.new("BodyAngularVelocity")
-	vel.MaxTorque = Vector3.new(1e9,1e9,1e9)
-	vel.AngularVelocity = Vector3.new(999999,999999,999999)
-	vel.Parent = root
+	local bav=Instance.new("BodyAngularVelocity")
+	bav.AngularVelocity=Vector3.new(0,999999,0)
+	bav.MaxTorque=Vector3.new(9e9,9e9,9e9)
+	bav.Parent=root
 
-	task.wait(0.3)
-	vel:Destroy()
+	task.wait(0.35)
+	bav:Destroy()
 
 end
 
@@ -284,10 +256,10 @@ HSE:CreateButton({
 	Name="Fling Players",
 	Callback=function()
 
-		local seeker = getSeeker()
+		local it=getSeeker()
 
 		for _,p in pairs(Players:GetPlayers()) do
-			if p ~= player and p ~= seeker then
+			if p~=player and p~=it then
 				fling(p)
 			end
 		end
@@ -300,7 +272,7 @@ HSE:CreateButton({
 	Callback=function()
 
 		for _,p in pairs(Players:GetPlayers()) do
-			if p ~= player then
+			if p~=player then
 				fling(p)
 			end
 		end
@@ -313,9 +285,9 @@ HSE:CreateInput({
 	PlaceholderText="Enter Username",
 	Callback=function(name)
 
-		local target = Players:FindFirstChild(name)
-		if target then
-			fling(target)
+		local t=Players:FindFirstChild(name)
+		if t then
+			fling(t)
 		end
 
 	end
