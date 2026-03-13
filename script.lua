@@ -1,51 +1,40 @@
--- Rayfield
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Rayfield UI
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local cam = workspace.CurrentCamera
 
 ------------------------------------------------
--- GAME CHECK
+-- Character
 ------------------------------------------------
 
-local GAME_ID = 205224386 -- Hide and Seek Extreme
-
-if game.PlaceId ~= GAME_ID then
-	Rayfield:Notify({
-		Title="Wrong Game",
-		Content="This hub only works in Hide and Seek Extreme",
-		Duration=6
-	})
-	return
+local function getChar()
+	local c = player.Character or player.CharacterAdded:Wait()
+	local hum = c:WaitForChild("Humanoid")
+	local root = c:WaitForChild("HumanoidRootPart")
+	return c, hum, root
 end
 
-------------------------------------------------
--- CHARACTER
-------------------------------------------------
+local char, hum, root = getChar()
 
-local char = player.Character or player.CharacterAdded:Wait()
-local hum = char:WaitForChild("Humanoid")
-local root = char:WaitForChild("HumanoidRootPart")
-
-player.CharacterAdded:Connect(function(c)
-	char=c
-	hum=c:WaitForChild("Humanoid")
-	root=c:WaitForChild("HumanoidRootPart")
+player.CharacterAdded:Connect(function()
+	char, hum, root = getChar()
 end)
 
 ------------------------------------------------
--- WINDOW
+-- Window
 ------------------------------------------------
 
 local Window = Rayfield:CreateWindow({
-	Name="Universal Fly | FAHFAHFAHFAH50",
-	LoadingTitle="Universal Hub",
-	LoadingSubtitle="Loading...",
-	ConfigurationSaving={Enabled=false}
+	Name = "Universal Fly Hub",
+	LoadingTitle = "Universal Hub",
+	LoadingSubtitle = "Loading...",
+	ConfigurationSaving = {Enabled = false}
 })
 
 local Main = Window:CreateTab("Main",4483362458)
@@ -59,8 +48,8 @@ Main:CreateInput({
 	Name="WalkSpeed",
 	PlaceholderText="Enter Speed",
 	Callback=function(v)
-		local n=tonumber(v)
-		if n then hum.WalkSpeed=n end
+		local n = tonumber(v)
+		if n then hum.WalkSpeed = n end
 	end
 })
 
@@ -72,84 +61,91 @@ Main:CreateInput({
 	Name="JumpPower",
 	PlaceholderText="Enter JumpPower",
 	Callback=function(v)
-		local n=tonumber(v)
-		if n then hum.JumpPower=n end
+		local n = tonumber(v)
+		if n then hum.JumpPower = n end
 	end
 })
 
 ------------------------------------------------
--- TRACERS
+-- FLY (Infinite Yield style)
 ------------------------------------------------
 
-local tracer=false
-local lines={}
+local flying = false
+local speed = 60
+local bv, bg
+local ctrl = {f=0,b=0,l=0,r=0,u=0,d=0}
+
+Main:CreateInput({
+	Name="Fly Speed",
+	PlaceholderText="Enter Fly Speed",
+	Callback=function(v)
+		local n = tonumber(v)
+		if n then speed = n end
+	end
+})
 
 Main:CreateToggle({
-	Name="Tracers",
+	Name="Fly",
 	CurrentValue=false,
 	Callback=function(v)
-		tracer=v
+
+		flying = v
+
+		if flying then
+			bv = Instance.new("BodyVelocity", root)
+			bv.MaxForce = Vector3.new(1e9,1e9,1e9)
+
+			bg = Instance.new("BodyGyro", root)
+			bg.MaxTorque = Vector3.new(1e9,1e9,1e9)
+		else
+			if bv then bv:Destroy() end
+			if bg then bg:Destroy() end
+		end
+
 	end
 })
+
+UIS.InputBegan:Connect(function(k,g)
+	if g then return end
+	if k.KeyCode==Enum.KeyCode.W then ctrl.f=1 end
+	if k.KeyCode==Enum.KeyCode.S then ctrl.b=-1 end
+	if k.KeyCode==Enum.KeyCode.A then ctrl.l=-1 end
+	if k.KeyCode==Enum.KeyCode.D then ctrl.r=1 end
+	if k.KeyCode==Enum.KeyCode.Space then ctrl.u=1 end
+	if k.KeyCode==Enum.KeyCode.LeftControl then ctrl.d=-1 end
+end)
+
+UIS.InputEnded:Connect(function(k)
+	if k.KeyCode==Enum.KeyCode.W then ctrl.f=0 end
+	if k.KeyCode==Enum.KeyCode.S then ctrl.b=0 end
+	if k.KeyCode==Enum.KeyCode.A then ctrl.l=0 end
+	if k.KeyCode==Enum.KeyCode.D then ctrl.r=0 end
+	if k.KeyCode==Enum.KeyCode.Space then ctrl.u=0 end
+	if k.KeyCode==Enum.KeyCode.LeftControl then ctrl.d=0 end
+end)
 
 RunService.RenderStepped:Connect(function()
 
-	for _,p in pairs(Players:GetPlayers()) do
+	if flying and bv then
+		local dir =
+		(cam.CFrame.LookVector*(ctrl.f+ctrl.b)) +
+		(cam.CFrame.RightVector*(ctrl.r+ctrl.l)) +
+		(cam.CFrame.UpVector*(ctrl.u+ctrl.d))
 
-		if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-
-			if not lines[p] then
-
-				lines[p]={
-					line=Drawing.new("Line"),
-					text=Drawing.new("Text")
-				}
-
-				lines[p].line.Color=Color3.fromRGB(0,255,0)
-				lines[p].line.Thickness=1
-
-				lines[p].text.Size=13
-				lines[p].text.Color=Color3.fromRGB(0,255,0)
-
-			end
-
-			local pos,vis=cam:WorldToViewportPoint(
-				p.Character.HumanoidRootPart.Position
-			)
-
-			local dist=(root.Position-p.Character.HumanoidRootPart.Position).Magnitude
-
-			if tracer and vis then
-
-				lines[p].line.From=Vector2.new(cam.ViewportSize.X/2,cam.ViewportSize.Y)
-				lines[p].line.To=Vector2.new(pos.X,pos.Y)
-				lines[p].line.Visible=true
-
-				lines[p].text.Text=math.floor(dist).." studs"
-				lines[p].text.Position=Vector2.new(pos.X,pos.Y)
-				lines[p].text.Visible=true
-
-			else
-
-				lines[p].line.Visible=false
-				lines[p].text.Visible=false
-
-			end
-
-		end
-
+		bv.Velocity = dir * speed
+		bg.CFrame = cam.CFrame
 	end
 
 end)
 
 ------------------------------------------------
--- FIND IT PLAYER
+-- FIND SEEKER
 ------------------------------------------------
 
-local function getIT()
+local function getSeeker()
 
 	for _,p in pairs(Players:GetPlayers()) do
-		if p.Character and p.Character:FindFirstChild("IsSeeker") then
+		if p.Character and p.Character:FindFirstChild("Seeker") then
 			return p
 		end
 	end
@@ -157,7 +153,7 @@ local function getIT()
 end
 
 ------------------------------------------------
--- ESP FUNCTIONS
+-- ESP SYSTEM
 ------------------------------------------------
 
 local function clearESP()
@@ -174,57 +170,41 @@ local function clearESP()
 
 end
 
-------------------------------------------------
--- ESP PLAYERS
-------------------------------------------------
-
 HSE:CreateButton({
 	Name="ESP Players",
 	Callback=function()
 
 		clearESP()
-
-		local it=getIT()
+		local seeker = getSeeker()
 
 		for _,p in pairs(Players:GetPlayers()) do
+			if p ~= player and p ~= seeker and p.Character then
 
-			if p~=it and p~=player and p.Character then
-
-				local h=Instance.new("Highlight",p.Character)
-				h.FillColor=Color3.fromRGB(0,255,0)
+				local h = Instance.new("Highlight",p.Character)
+				h.FillColor = Color3.fromRGB(0,255,0)
 
 			end
-
 		end
 
 	end
 })
-
-------------------------------------------------
--- ESP IT
-------------------------------------------------
 
 HSE:CreateButton({
 	Name="ESP IT",
 	Callback=function()
 
 		clearESP()
+		local seeker = getSeeker()
 
-		local it=getIT()
+		if seeker and seeker.Character then
 
-		if it and it.Character then
-
-			local h=Instance.new("Highlight",it.Character)
-			h.FillColor=Color3.fromRGB(255,0,0)
+			local h = Instance.new("Highlight",seeker.Character)
+			h.FillColor = Color3.fromRGB(255,0,0)
 
 		end
 
 	end
 })
-
-------------------------------------------------
--- ESP ALL
-------------------------------------------------
 
 HSE:CreateButton({
 	Name="ESP ALL",
@@ -233,14 +213,12 @@ HSE:CreateButton({
 		clearESP()
 
 		for _,p in pairs(Players:GetPlayers()) do
+			if p ~= player and p.Character then
 
-			if p~=player and p.Character then
-
-				local h=Instance.new("Highlight",p.Character)
-				h.FillColor=Color3.fromRGB(0,255,0)
+				local h = Instance.new("Highlight",p.Character)
+				h.FillColor = Color3.fromRGB(0,255,0)
 
 			end
-
 		end
 
 	end
@@ -254,26 +232,20 @@ HSE:CreateButton({
 	Name="Collect ALL Coins",
 	Callback=function()
 
-		local old=root.CFrame
+		local old = root.CFrame
 
 		for _,v in pairs(workspace:GetDescendants()) do
 
-			if v.Name=="Coin" and v:IsA("BasePart") then
+			if v:IsA("Part") and string.find(v.Name:lower(),"coin") then
 
-				local tween=TweenService:Create(
-					root,
-					TweenInfo.new(0.3),
-					{CFrame=v.CFrame}
-				)
-
-				tween:Play()
-				tween.Completed:Wait()
+				root.CFrame = v.CFrame
+				task.wait(0.15)
 
 			end
 
 		end
 
-		root.CFrame=old
+		root.CFrame = old
 
 	end
 })
@@ -286,62 +258,49 @@ local function fling(target)
 
 	if not target or not target.Character then return end
 
-	local hrp=target.Character:FindFirstChild("HumanoidRootPart")
+	local hrp = target.Character:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 
-	local vel=Instance.new("BodyAngularVelocity")
-	vel.AngularVelocity=Vector3.new(99999,99999,99999)
-	vel.MaxTorque=Vector3.new(99999,99999,99999)
-	vel.Parent=hrp
+	root.CFrame = hrp.CFrame
+
+	local vel = Instance.new("BodyAngularVelocity")
+	vel.MaxTorque = Vector3.new(1e9,1e9,1e9)
+	vel.AngularVelocity = Vector3.new(999999,999999,999999)
+	vel.Parent = root
 
 	task.wait(0.3)
 	vel:Destroy()
 
 end
 
-------------------------------------------------
--- FLING IT
-------------------------------------------------
-
 HSE:CreateButton({
 	Name="Fling IT",
 	Callback=function()
-
-		local it=getIT()
-		if it then fling(it) end
-
+		fling(getSeeker())
 	end
 })
-
-------------------------------------------------
--- FLING PLAYERS
-------------------------------------------------
 
 HSE:CreateButton({
 	Name="Fling Players",
 	Callback=function()
 
-		local it=getIT()
+		local seeker = getSeeker()
 
 		for _,p in pairs(Players:GetPlayers()) do
-			if p~=player and p~=it then
+			if p ~= player and p ~= seeker then
 				fling(p)
 			end
 		end
 
 	end
 })
-
-------------------------------------------------
--- FLING ALL
-------------------------------------------------
 
 HSE:CreateButton({
 	Name="Fling All",
 	Callback=function()
 
 		for _,p in pairs(Players:GetPlayers()) do
-			if p~=player then
+			if p ~= player then
 				fling(p)
 			end
 		end
@@ -349,16 +308,12 @@ HSE:CreateButton({
 	end
 })
 
-------------------------------------------------
--- FLING SNIPER
-------------------------------------------------
-
 HSE:CreateInput({
-	Name="Fling Sniper (Username)",
+	Name="Fling Sniper",
 	PlaceholderText="Enter Username",
 	Callback=function(name)
 
-		local target=Players:FindFirstChild(name)
+		local target = Players:FindFirstChild(name)
 		if target then
 			fling(target)
 		end
