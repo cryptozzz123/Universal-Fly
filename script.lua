@@ -278,3 +278,118 @@ HSE:CreateToggle({Name="Seeker Tracker", CurrentValue=false, Callback=function(v
 		end
 	end
 end})
+------------------------------------------------
+-- SAFE FLING SYSTEM
+------------------------------------------------
+
+local function getSeeker()
+
+	for _,p in pairs(Players:GetPlayers()) do
+		if p.Team and p.Team.Name:lower():find("seeker") then
+			return p
+		end
+	end
+
+end
+
+
+local function smoothFling(target)
+
+	if not target then return end
+	if not target.Character then return end
+
+	local thrp = target.Character:FindFirstChild("HumanoidRootPart")
+	if not thrp then return end
+
+	local old = root.CFrame
+
+	root.CFrame = thrp.CFrame * CFrame.new(0,0,2)
+
+	local bav = Instance.new("BodyAngularVelocity")
+	bav.AngularVelocity = Vector3.new(0,40000,0)
+	bav.MaxTorque = Vector3.new(1e8,1e8,1e8)
+	bav.Parent = root
+
+	task.wait(0.25)
+
+	bav:Destroy()
+	root.CFrame = old
+
+end
+
+------------------------------------------------
+-- FLING IT
+------------------------------------------------
+
+HSE:CreateButton({
+	Name = "Fling IT",
+	Callback = function()
+
+		local it = getSeeker()
+
+		if it then
+			smoothFling(it)
+		end
+
+	end
+})
+
+------------------------------------------------
+-- FLING PLAYERS
+------------------------------------------------
+
+HSE:CreateButton({
+	Name = "Fling Players",
+	Callback = function()
+
+		local it = getSeeker()
+
+		for _,p in pairs(Players:GetPlayers()) do
+
+			if p ~= player and p ~= it then
+				smoothFling(p)
+				task.wait(0.3)
+			end
+
+		end
+
+	end
+})
+
+------------------------------------------------
+-- FLING ALL
+------------------------------------------------
+
+HSE:CreateButton({
+	Name = "Fling All",
+	Callback = function()
+
+		for _,p in pairs(Players:GetPlayers()) do
+
+			if p ~= player then
+				smoothFling(p)
+				task.wait(0.3)
+			end
+
+		end
+
+	end
+})
+
+------------------------------------------------
+-- FLING SNIPER
+------------------------------------------------
+
+HSE:CreateInput({
+	Name = "Fling Sniper",
+	PlaceholderText = "Enter Username",
+	Callback = function(name)
+
+		local target = Players:FindFirstChild(name)
+
+		if target then
+			smoothFling(target)
+		end
+
+	end
+})
