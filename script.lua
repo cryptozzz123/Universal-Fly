@@ -190,53 +190,46 @@ HSE:CreateButton({
 })
 
 ------------------------------------------------
--- AUTO COIN FARM (WORKING)
+-- FIND CURRENT MAP
+------------------------------------------------
+
+local function getMap()
+
+	for _,v in pairs(workspace:GetChildren()) do
+		if v:FindFirstChild("Coins", true) then
+			return v
+		end
+	end
+
+end
+
+------------------------------------------------
+-- AUTO COLLECT COINS
 ------------------------------------------------
 
 local farming = false
 
-local function getCoins()
-
-	local coins = {}
-
-	for _,v in pairs(workspace:GetDescendants()) do
-
-		if v:IsA("BasePart") then
-
-			if v.Name:lower():find("coin") 
-			or v.Name:lower():find("gold") 
-			or v.Name:lower():find("token") then
-
-				table.insert(coins,v)
-
-			end
-
-		end
-
-	end
-
-	return coins
-
-end
-
-
 HSE:CreateToggle({
-	Name="Auto Coin Farm",
-	CurrentValue=false,
-	Callback=function(v)
+	Name = "Auto Collect Coins",
+	CurrentValue = false,
+	Callback = function(v)
 
-		farming=v
+		farming = v
 
 		while farming do
 
-			local coins = getCoins()
+			local map = getMap()
 
-			for _,coin in pairs(coins) do
+			if map then
 
-				if coin and coin.Parent then
+				for _,obj in pairs(map:GetDescendants()) do
 
-					root.CFrame = coin.CFrame + Vector3.new(0,3,0)
-					task.wait(0.15)
+					if obj:IsA("BasePart") and obj.Name:lower():find("coin") then
+
+						root.CFrame = obj.CFrame + Vector3.new(0,2,0)
+						task.wait(0.1)
+
+					end
 
 				end
 
@@ -249,7 +242,7 @@ HSE:CreateToggle({
 	end
 })
 ------------------------------------------------
--- SMOOTH FLING (Infinite Yield style)
+-- LOW LAG FLING
 ------------------------------------------------
 
 local function fling(target)
@@ -261,24 +254,16 @@ local function fling(target)
 
 	local old = root.CFrame
 
-	root.CFrame = thrp.CFrame * CFrame.new(0,0,2)
+	root.CFrame = thrp.CFrame * CFrame.new(0,0,1)
 
 	local bav = Instance.new("BodyAngularVelocity")
-	bav.AngularVelocity = Vector3.new(0,999999,0)
-	bav.MaxTorque = Vector3.new(9e9,9e9,9e9)
-	bav.P = 100000
+	bav.AngularVelocity = Vector3.new(0,50000,0)
+	bav.MaxTorque = Vector3.new(1e8,1e8,1e8)
 	bav.Parent = root
 
-	local bv = Instance.new("BodyVelocity")
-	bv.Velocity = Vector3.new(0,0,0)
-	bv.MaxForce = Vector3.new(9e9,9e9,9e9)
-	bv.Parent = root
-
-	task.wait(0.4)
+	task.wait(0.25)
 
 	bav:Destroy()
-	bv:Destroy()
-
 	root.CFrame = old
 
 end
