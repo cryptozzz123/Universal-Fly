@@ -1,3 +1,4 @@
+-- Load Rayfield
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local Players = game:GetService("Players")
@@ -8,7 +9,7 @@ local player = Players.LocalPlayer
 local cam = workspace.CurrentCamera
 
 ------------------------------------------------
--- Character
+-- CHARACTER
 ------------------------------------------------
 
 local function getChar()
@@ -29,10 +30,10 @@ end)
 ------------------------------------------------
 
 local Window = Rayfield:CreateWindow({
-	Name="Universal Main Hub",
-	LoadingTitle="Universal Hub",
-	LoadingSubtitle="Loading...",
-	ConfigurationSaving={Enabled=false}
+	Name = "Universal Utility Hub",
+	LoadingTitle = "Universal Hub",
+	LoadingSubtitle = "Loading...",
+	ConfigurationSaving = {Enabled = false}
 })
 
 local Main = Window:CreateTab("Main",4483362458)
@@ -42,9 +43,9 @@ local Main = Window:CreateTab("Main",4483362458)
 ------------------------------------------------
 
 Main:CreateInput({
-	Name="Set WalkSpeed",
-	PlaceholderText="Enter Speed",
-	Callback=function(v)
+	Name = "WalkSpeed",
+	PlaceholderText = "Enter Speed",
+	Callback = function(v)
 		local n = tonumber(v)
 		if n then
 			hum.WalkSpeed = n
@@ -57,9 +58,9 @@ Main:CreateInput({
 ------------------------------------------------
 
 Main:CreateInput({
-	Name="Set JumpPower",
-	PlaceholderText="Enter JumpPower",
-	Callback=function(v)
+	Name = "JumpPower",
+	PlaceholderText = "Enter JumpPower",
+	Callback = function(v)
 		local n = tonumber(v)
 		if n then
 			hum.JumpPower = n
@@ -68,43 +69,83 @@ Main:CreateInput({
 })
 
 ------------------------------------------------
+-- INFINITE JUMP
+------------------------------------------------
+
+local infJump = false
+
+Main:CreateToggle({
+	Name = "Infinite Jump",
+	CurrentValue = false,
+	Callback = function(v)
+		infJump = v
+	end
+})
+
+UIS.JumpRequest:Connect(function()
+	if infJump then
+		hum:ChangeState("Jumping")
+	end
+end)
+
+------------------------------------------------
+-- NOCLIP
+------------------------------------------------
+
+local noclip = false
+
+Main:CreateToggle({
+	Name = "Noclip",
+	CurrentValue = false,
+	Callback = function(v)
+		noclip = v
+	end
+})
+
+RunService.Stepped:Connect(function()
+	if noclip and char then
+		for _,v in pairs(char:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.CanCollide = false
+			end
+		end
+	end
+end)
+
+------------------------------------------------
 -- FLY
 ------------------------------------------------
 
 local flying = false
-local speed = 60
-local bv,bg
-local ctrl={f=0,b=0,l=0,r=0,u=0,d=0}
+local flySpeed = 60
+local bv, bg
+local ctrl = {f=0,b=0,l=0,r=0,u=0,d=0}
 
 Main:CreateInput({
-	Name="Fly Speed",
-	PlaceholderText="Enter Fly Speed",
-	Callback=function(v)
-		local n=tonumber(v)
-		if n then speed=n end
+	Name = "Fly Speed",
+	PlaceholderText = "Enter Fly Speed",
+	Callback = function(v)
+		local n = tonumber(v)
+		if n then flySpeed = n end
 	end
 })
 
 Main:CreateToggle({
-	Name="Fly",
-	CurrentValue=false,
-	Callback=function(v)
+	Name = "Fly",
+	CurrentValue = false,
+	Callback = function(v)
 
-		flying=v
+		flying = v
 
 		if flying then
+			bv = Instance.new("BodyVelocity", root)
+			bv.MaxForce = Vector3.new(1e9,1e9,1e9)
 
-			bv=Instance.new("BodyVelocity",root)
-			bv.MaxForce=Vector3.new(1e9,1e9,1e9)
-
-			bg=Instance.new("BodyGyro",root)
-			bg.MaxTorque=Vector3.new(1e9,1e9,1e9)
-
+			bg = Instance.new("BodyGyro", root)
+			bg.MaxTorque = Vector3.new(1e9,1e9,1e9)
 		else
-
 			if bv then bv:Destroy() end
 			if bg then bg:Destroy() end
-
 		end
 
 	end
@@ -138,8 +179,8 @@ RunService.RenderStepped:Connect(function()
 		(cam.CFrame.RightVector*(ctrl.r+ctrl.l))+
 		(cam.CFrame.UpVector*(ctrl.u+ctrl.d))
 
-		bv.Velocity=dir*speed
-		bg.CFrame=cam.CFrame
+		bv.Velocity = dir * flySpeed
+		bg.CFrame = cam.CFrame
 
 	end
 
@@ -149,36 +190,30 @@ end)
 -- ESP
 ------------------------------------------------
 
-local esp=false
+local esp = false
 
 Main:CreateToggle({
-	Name="Player ESP",
-	CurrentValue=false,
-	Callback=function(v)
+	Name = "Player ESP",
+	CurrentValue = false,
+	Callback = function(v)
 
-		esp=v
+		esp = v
 
 		for _,p in pairs(Players:GetPlayers()) do
-
-			if p~=player and p.Character then
+			if p ~= player and p.Character then
 
 				if esp then
-
-					local h=Instance.new("Highlight",p.Character)
-					h.FillColor=Color3.fromRGB(0,255,0)
-
+					local h = Instance.new("Highlight",p.Character)
+					h.FillColor = Color3.fromRGB(0,255,0)
 				else
-
 					for _,v in pairs(p.Character:GetChildren()) do
 						if v:IsA("Highlight") then
 							v:Destroy()
 						end
 					end
-
 				end
 
 			end
-
 		end
 
 	end
@@ -188,14 +223,14 @@ Main:CreateToggle({
 -- TRACERS
 ------------------------------------------------
 
-local tracer=false
-local lines={}
+local tracer = false
+local lines = {}
 
 Main:CreateToggle({
-	Name="Player Tracers",
-	CurrentValue=false,
-	Callback=function(v)
-		tracer=v
+	Name = "Player Tracers",
+	CurrentValue = false,
+	Callback = function(v)
+		tracer = v
 	end
 })
 
@@ -203,36 +238,38 @@ RunService.RenderStepped:Connect(function()
 
 	for _,p in pairs(Players:GetPlayers()) do
 
-		if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+		if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
 
 			if not lines[p] then
 
-				lines[p]={line=Drawing.new("Line"),text=Drawing.new("Text")}
+				lines[p] = {
+					line = Drawing.new("Line"),
+					text = Drawing.new("Text")
+				}
 
-				lines[p].line.Color=Color3.fromRGB(0,255,0)
-				lines[p].text.Size=13
-				lines[p].text.Color=Color3.fromRGB(0,255,0)
+				lines[p].line.Color = Color3.fromRGB(0,255,0)
+				lines[p].text.Size = 13
+				lines[p].text.Color = Color3.fromRGB(0,255,0)
 
 			end
 
-			local pos,vis=cam:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
-
-			local dist=(root.Position-p.Character.HumanoidRootPart.Position).Magnitude
+			local pos,vis = cam:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
+			local dist = (root.Position - p.Character.HumanoidRootPart.Position).Magnitude
 
 			if tracer and vis then
 
-				lines[p].line.From=Vector2.new(cam.ViewportSize.X/2,cam.ViewportSize.Y)
-				lines[p].line.To=Vector2.new(pos.X,pos.Y)
-				lines[p].line.Visible=true
+				lines[p].line.From = Vector2.new(cam.ViewportSize.X/2,cam.ViewportSize.Y)
+				lines[p].line.To = Vector2.new(pos.X,pos.Y)
+				lines[p].line.Visible = true
 
-				lines[p].text.Text=math.floor(dist).." studs"
-				lines[p].text.Position=Vector2.new(pos.X,pos.Y)
-				lines[p].text.Visible=true
+				lines[p].text.Text = math.floor(dist).." studs"
+				lines[p].text.Position = Vector2.new(pos.X,pos.Y)
+				lines[p].text.Visible = true
 
 			else
 
-				lines[p].line.Visible=false
-				lines[p].text.Visible=false
+				lines[p].line.Visible = false
+				lines[p].text.Visible = false
 
 			end
 
@@ -240,4 +277,15 @@ RunService.RenderStepped:Connect(function()
 
 	end
 
+end)
+
+------------------------------------------------
+-- RIGHTSHIFT TOGGLE UI
+------------------------------------------------
+
+UIS.InputBegan:Connect(function(k,g)
+	if g then return end
+	if k.KeyCode == Enum.KeyCode.RightShift then
+		Rayfield:ToggleUI()
+	end
 end)
